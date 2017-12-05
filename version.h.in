@@ -1,0 +1,35 @@
+#pragma once
+#include <string>
+
+namespace vimal {
+
+class Version
+{
+public:
+    inline static const std::string& name() {
+        static std::string name_str{ "@PROJECT_NAME@" };
+        return name_str;
+    }
+
+    inline static uint32_t major() {
+        return _major;
+    }
+
+    inline static uint32_t minor() {
+        return _minor;
+    }
+
+    inline static const std::string& to_string() {
+        static std::string version_str{ std::string(name())
+            .append(" version")
+            .append(" ").append(std::to_string(_major))
+            .append(".").append(std::to_string(_minor)) };
+        return version_str;
+    }
+
+private:
+    static const uint32_t _major = @VSCPP_VERSION_MAJOR@;
+    static const uint32_t _minor = @VSCPP_VERSION_MINOR@;
+};
+
+} // namespace vimal
