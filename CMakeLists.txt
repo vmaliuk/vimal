@@ -1,6 +1,6 @@
 cmake_minimum_required (VERSION 2.6)
-project (vimal)
 
+project (vimal)
 set(VIMAL_SOURCE_DIR ${PROJECT_SOURCE_DIR}/src/${PROJECT_NAME})
 
 # version
@@ -12,13 +12,13 @@ configure_file (
     )
 
 # configuratin
-set(CMAKE_CXX_FLAGS "-std=c++14")
+set(CMAKE_CXX_FLAGS "-std=c++17")
 include_directories(
     "${VIMAL_SOURCE_DIR}"
     )
 
 # source files
-set(VSCPP_SOURCE
+set(VIMAL_SOURCE
     ${VIMAL_SOURCE_DIR}/error.cpp
     ${VIMAL_SOURCE_DIR}/log.cpp
     src/main.cpp
@@ -26,4 +26,4 @@ set(VSCPP_SOURCE
 
 # executable target
 set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
-add_executable(${PROJECT_NAME} ${VSCPP_SOURCE})
+add_executable(${PROJECT_NAME} ${VIMAL_SOURCE})

@@ -1,32 +1,15 @@
 #pragma once
-#include <sstream>
 
-namespace vimal {
-
-using namespace std::string_literals;
-
+namespace vma {
 namespace string_utils {
 
-template <typename Value>
-inline void to_sstream(std::ostringstream& os, const Value& value)
-{
-    os << value;
-}
-
-template <typename Value, typename ...Values>
-inline void to_sstream(std::ostringstream& os, const Value& value, Values&&... values)
-{
-    os << value;
-    to_sstream(os, std::forward<Values>(values)...);
-}
-
-template<typename ...Values>
-inline std::string to_string(Values&&... values)
+template<typename ...Args>
+inline std::string to_string(Args&& ...args)
 {
     std::ostringstream os;
-    to_sstream(os, std::forward<Values>(values)...);
+    (os << ... << args);
     return os.str();
 }
 
 } // namespace string_utils
-} // namespace vimal
+} // namespace vma

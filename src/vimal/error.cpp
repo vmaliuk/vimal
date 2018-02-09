@@ -1,33 +1,33 @@
 #include "error.h"
-#include "string.hpp"
+#include "string.h"
 #include <system_error>
 
-using namespace vimal::error;
+using namespace vma::error;
 
-using vimal::string_utils::to_string;
+using vma::string_utils::to_string;
 
-const char* Pack::what() const noexcept
+namespace _error {
+class Location : public std::exception
 {
-    if (_message.empty())
+public:
+    Location(const Location& other) = default;
+    Location& operator=(const Location& other) = default;
+    virtual ~Location() = default;
+
+    explicit Location(vma::Location location)
+    : _location(location)
     {
-        int i = 0;
-        std::ostringstream os;
-        os << "exceptions pack"s;
-        for (auto& eptr : _exceptions)
-        {
-            try
-            {
-                std::rethrow_exception(eptr);
-            }
-            catch (std::exception& ex)
-            {
-                os << " ["s << ++i << "]: "s << ex.what();
-            }
-        }
-        _message = std::move(os.str());
     }
-    return _message.c_str();
-}
+
+    inline vma::Location location() const
+    {
+        return _location;
+    }
+
+private:
+    vma::Location _location;
+};
+} // namespace _error
 
 class Info::Builder
 {
@@ -50,19 +50,12 @@ public:
         {
             std::rethrow_exception(eptr);
         }
-        catch (Pack& pack)
-        {
-            while (auto eptr = pack.pop())
-            {
-                build(info, eptr);
-            }
-        }
-        catch (Location& err)
+        catch (_error::Location& err)
         {
             info._location = err.location();
             build(info, err);
         }
-        catch (vimal::Error& err)
+        catch (vma::Error& err)
         {
             if (info._level < err.level())
             {
@@ -88,15 +81,20 @@ public:
     }
 };
 
-Info vimal::error::make_info(std::exception_ptr eptr)
+vma::Error::Error(std::string&& message)
+: _message(std::move(message))
 {
-    return make_info(nullptr, eptr);
 }
 
-Info vimal::error::make_info(const char* location, std::exception_ptr eptr)
+Info vma::error::make_info(std::exception_ptr eptr)
+{
+    return make_info(vma::Location(), eptr);
+}
+
+Info vma::error::make_info(vma::Location location, std::exception_ptr eptr)
 {
     Info err_info;
-    if (location != nullptr)
+    if (location)
     {
         err_info._location = location;
     }
@@ -105,45 +103,31 @@ Info vimal::error::make_info(const char* location, std::exception_ptr eptr)
     return err_info;
 }
 
-std::ostream& vimal::error::operator<<(std::ostream& os, const Info& err_info)
+std::ostream& vma::error::operator<<(std::ostream& os, const Info& err_info)
 {
-    bool nested = false;
-    if (err_info._out_level)
+    switch (err_info._level)
     {
-        switch (err_info._level)
-        {
-        case Level::Warning:
-            os << "Warning"s;
-            break;
-        case Level::Critical:
-            os << "Critical"s;
-            break;
-        default:
-            os << "Error"s;
-        }
-        nested = true;
+    case Level::Warning:
+        os << "Warning"s;
+        break;
+    case Level::Critical:
+        os << "Critical"s;
+        break;
+    default:
+        os << "Error"s;
     }
     for (auto& message : err_info._messages)
     {
-        if (nested)
-        {
-            os << " | "s;
-        }
-        os << message;
-        nested = true;
+        os << " | "s << message;
     }
     if (err_info._location != nullptr)
     {
-        if (nested)
-        {
-            os << " | "s;
-        }
-        os << err_info._location;
+        os << " | "s << err_info._location;
     }
     return os;
 }
 
-[[noreturn]] void vimal::rethrow(const char* location)
+[[noreturn]] void vma::rethrow(vma::Location location)
 {
     std::exception_ptr eptr = std::current_exception();
     if (eptr)
@@ -152,27 +136,27 @@ std::ostream& vimal::error::operator<<(std::ostream& os, const Info& err_info)
         {
             std::rethrow_exception(eptr);
         }
-        catch (vimal::Error&)
+        catch (vma::Error&)
         {
             throw;
         }
         catch (...)
         {
-            vimal::throw_location(location);
+            vma::throw_error(location);
         }
     }
     else
     {
-        vimal::throw_location(location);
+        vma::throw_error(location);
     }
 }
 
-[[noreturn]] void vimal::throw_location(const char* location)
+[[noreturn]] void vma::throw_error(vma::Location location)
 {
-    throw_error(Location(location));
+    throw_error(_error::Location(location));
 }
 
-[[noreturn]] void vimal::throw_error(std::string&& message)
+[[noreturn]] void vma::throw_error(std::string&& message)
 {
-    throw_error(vimal::Error(std::move(message)));
+    throw_error(vma::Error(std::move(message)));
 }

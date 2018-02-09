@@ -1,7 +1,7 @@
 #pragma once
 #include <string>
 
-namespace vimal {
+namespace vma {
 
 class Version
 {
@@ -32,4 +32,4 @@ private:
     static const uint32_t _minor = @VSCPP_VERSION_MINOR@;
 };
 
-} // namespace vimal
+} // namespace vma
